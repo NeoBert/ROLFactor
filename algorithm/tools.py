@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import scipy.optimize as optimize
 from scipy.special import betaln
-from pandas.stats.moments import rolling_mean as rolling_m
-from pandas.stats.moments import rolling_corr
 import matplotlib.pyplot as plt
 from time import time
 from datetime import datetime
@@ -16,6 +14,7 @@ import multiprocessing
 from statsmodels import api as sm
 import contextlib
 from cvxopt import solvers, matrix
+
 solvers.options['show_progress'] = False
 
 
@@ -90,13 +89,13 @@ def random_portfolio(n, k, mu=0., sd=0.01, corr=None, dt=1., nan_pct=0.):
     mu = mu * np.ones(k)
 
     # drift
-    nu = mu - sd**2 / 2.
+    nu = mu - sd ** 2 / 2.
 
     # do a Cholesky factorization on the correlation matrix
     R = np.linalg.cholesky(corr).T
 
     # generate uncorrelated random sequence
-    x = np.matrix(np.random.normal(size=(n - 1,k)))
+    x = np.random.normal(size=(n - 1, k))
 
     # correlate the sequences
     ep = x * R
@@ -115,7 +114,8 @@ def random_portfolio(n, k, mu=0., sd=0.01, corr=None, dt=1., nan_pct=0.):
     return pd.DataFrame(S, columns=['S{}'.format(i) for i in range(S.shape[1])])
 
 
-def opt_weights(X, metric='return', max_leverage=1, rf_rate=0., alpha=0., freq=252, no_cash=False, sd_factor=1., **kwargs):
+def opt_weights(X, metric='return', max_leverage=1, rf_rate=0., alpha=0., freq=252, no_cash=False, sd_factor=1.,
+                **kwargs):
     """ Find best constant rebalanced portfolio with regards to some metric.
     :param X: Prices in ratios.
     :param metric: what performance metric to optimize, can be either `return` or `sharpe`
@@ -148,7 +148,8 @@ def opt_weights(X, metric='return', max_leverage=1, rf_rate=0., alpha=0., freq=2
 
     while True:
         # problem optimization
-        res = optimize.minimize(objective, x_0, bounds=[(0., max_leverage)]*len(x_0), constraints=cons, method='slsqp', **kwargs)
+        res = optimize.minimize(objective, x_0, bounds=[(0., max_leverage)] * len(x_0), constraints=cons,
+                                method='slsqp', **kwargs)
 
         # result can be out-of-bounds -> try it again
         EPS = 1E-7
@@ -198,7 +199,7 @@ def opt_markowitz(mu, sigma, long_only=True, reg=0., rf_rate=0., q=1., max_lever
         def maximize(mu, sigma, r, q):
             n = len(mu)
 
-            P = 2 * matrix((sigma - r*mu*mu.T + (n*r)**2) / (1+r))
+            P = 2 * matrix((sigma - r * mu * mu.T + (n * r) ** 2) / (1 + r))
             q = matrix(-mu) * q
             G = matrix(-np.eye(n))
             h = matrix(np.zeros(n))
@@ -246,10 +247,11 @@ def rolling_cov_pairwise(df, *args, **kwargs):
 
 def rolling_corr(x, y, **kwargs):
     """ Rolling correlation between columns from x and y. """
+
     def rolling(dataframe, *args, **kwargs):
         ret = dataframe.copy()
         for col in ret:
-            ret[col] = rolling_m(ret[col], *args, **kwargs)
+            ret[col] = ret[col].rolling(*args, **kwargs)
         return ret
 
     n, k = x.shape
@@ -265,7 +267,7 @@ def rolling_corr(x, y, **kwargs):
         for j, col_y in enumerate(y):
             DX = EX2[col_x] - EX[col_x] ** 2
             DY = EY2[col_y] - EY[col_y] ** 2
-            RXY[:, i, j] = rolling_m(x[col_x] * y[col_y], **kwargs) - EX[col_x] * EY[col_y]
+            RXY[:, i, j] = (x[col_x] * y[col_y]).rolling(**kwargs) - EX[col_x] * EY[col_y]
             RXY[:, i, j] = RXY[:, i, j] / np.sqrt(DX * DY)
 
     return RXY, EX.values
@@ -279,17 +281,17 @@ def simplex_proj(y):
     s = sorted(y, reverse=True)
     tmpsum = 0.
 
-    for ii in range(m-1):
+    for ii in range(m - 1):
         tmpsum = tmpsum + s[ii]
         tmax = (tmpsum - 1) / (ii + 1);
-        if tmax >= s[ii+1]:
+        if tmax >= s[ii + 1]:
             bget = True
             break
 
     if not bget:
-        tmax = (tmpsum + s[m-1] -1)/m
+        tmax = (tmpsum + s[m - 1] - 1) / m
 
-    return np.maximum(y-tmax,0.)
+    return np.maximum(y - tmax, 0.)
 
 
 def __mesh(d, k):
@@ -297,8 +299,8 @@ def __mesh(d, k):
     if d == 1:
         yield [k]
     else:
-        for i in range(k+1):
-            for s in __mesh(d-1, k-i):
+        for i in range(k + 1):
+            for s in __mesh(d - 1, k - i):
                 yield [i] + s
 
 
@@ -311,10 +313,10 @@ def simplex_mesh(d, points):
     """
     # find k for __mesh such that points is number of points
     # total number of points is combination(d + k - 1, k)
-    fun = lambda k: - np.log(d+k) - betaln(k+1,d) - np.log(points)
+    fun = lambda k: - np.log(d + k) - betaln(k + 1, d) - np.log(points)
     k = int(optimize.newton(fun, x0=1))
-    k = max(k,1)
-    return np.array(sorted(__mesh(d,k))) / float(k)
+    k = max(k, 1)
+    return np.array(sorted(__mesh(d, k))) / float(k)
 
 
 def mc_simplex(d, points):
@@ -323,21 +325,21 @@ def mc_simplex(d, points):
     :param points: Total number of points.
     """
     a = np.sort(np.random.random((points, d)))
-    a = np.hstack([np.zeros((points,1)), a, np.ones((points,1))])
+    a = np.hstack([np.zeros((points, 1)), a, np.ones((points, 1))])
     return np.diff(a)
 
 
 def combinations(S, r):
     """ Generator of all r-element combinations of stocks from portfolio S. """
     for ncols in itertools.combinations(S.columns, r):
-        #yield S.iloc[:,ncols]
+        # yield S.iloc[:,ncols]
         yield S[list(ncols)]
 
 
 def log_progress(i, total, by=1):
     """ Log progress by pcts. """
     progress = ((100 * i / total) // by) * by
-    last_progress = ((100 * (i-1) / total) // by) * by
+    last_progress = ((100 * (i - 1) / total) // by) * by
 
     if progress != last_progress:
         logging.debug('Progress: {}%...'.format(progress))
@@ -360,13 +362,13 @@ def sharpe(r_log, rf_rate=0., alpha=0., freq=None, sd_factor=1.):
     # risk-free rate
     rf = np.log(1 + rf_rate)
 
-    sh = (mu - rf) / (sd + alpha)**sd_factor
+    sh = (mu - rf) / (sd + alpha) ** sd_factor
 
     if isinstance(sh, float):
         if sh == np.inf:
-            return np.inf * np.sign(mu - rf**(1./freq))
+            return np.inf * np.sign(mu - rf ** (1. / freq))
     else:
-        sh[sh == np.inf] *= np.sign(mu - rf**(1./freq))
+        sh[sh == np.inf] *= np.sign(mu - rf ** (1. / freq))
     return sh
 
 
@@ -378,7 +380,7 @@ def sharpe_std(X):
     sh = sharpe(X)
     n = X.notnull().sum()
     f = freq(X.index)
-    return np.sqrt((1. + sh**2/2.) * f / n)
+    return np.sqrt((1. + sh ** 2 / 2.) * f / n)
 
 
 def freq(ix):
@@ -395,6 +397,7 @@ def freq(ix):
         return len(ix) / float(days) * 365.
     else:
         return 252.
+
 
 # add alias to allow use of freq keyword in functions
 _freq = freq
@@ -429,13 +432,13 @@ def fill_synthetic_data(S, corr_threshold=0.95, backfill=False):
             if abs(cr) >= corr_threshold:
                 # calculate b in y = b*x
                 nn = X[col].notnull()
-                b = (X.ix[nn, col] * X.ix[nn, synth]).sum() / (X.ix[nn, synth]**2).sum()
+                b = (X.ix[nn, col] * X.ix[nn, synth]).sum() / (X.ix[nn, synth] ** 2).sum()
 
                 # fill missing data
                 X.ix[~nn, col] = b * X.ix[~nn, synth]
 
                 logging.info('Filling missing values of {} by {:.2f}*{} (correlation {:.2f})'.format(
-                        col, b, synth, cr))
+                    col, b, synth, cr))
             else:
                 if backfill:
                     logging.info('No proxy for {} found, backfill prices.'.format(col))
@@ -551,7 +554,10 @@ def get_cash(S, interest_rate=0.025):
 
 def tradable_etfs():
     return [
-        'TLT', 'SPY', 'RSP', 'GLD', 'EDV', 'MDY', 'QQQ', 'IWM', 'EFA', 'IYR', 'ASHR', 'SSO', 'TMF', 'UPRO', 'EDC', 'TQQQ', 'XIV',
-        'ZIV', 'EEM', 'UGLD', 'FAS', 'UDOW', 'UMDD', 'URTY', 'TNA', 'ERX', 'BIB', 'UYG', 'RING', 'LABU', 'XLE', 'XLF', 'IBB',
-        'FXI', 'XBI', 'XSD', 'GOOGL', 'AAPL', 'VNQ', 'DRN', 'O', 'IEF', 'GBTC', 'KBWY', 'KBWR', 'DPST', 'YINN', 'FHK', 'XOP',
+        'TLT', 'SPY', 'RSP', 'GLD', 'EDV', 'MDY', 'QQQ', 'IWM', 'EFA', 'IYR', 'ASHR', 'SSO', 'TMF', 'UPRO', 'EDC',
+        'TQQQ', 'XIV',
+        'ZIV', 'EEM', 'UGLD', 'FAS', 'UDOW', 'UMDD', 'URTY', 'TNA', 'ERX', 'BIB', 'UYG', 'RING', 'LABU', 'XLE', 'XLF',
+        'IBB',
+        'FXI', 'XBI', 'XSD', 'GOOGL', 'AAPL', 'VNQ', 'DRN', 'O', 'IEF', 'GBTC', 'KBWY', 'KBWR', 'DPST', 'YINN', 'FHK',
+        'XOP',
         'GREK', 'SIL', 'JPNL', 'KRE', 'IAT', 'SOXL', 'RETL', 'VIXM', 'QABA', 'KBE', 'USDU', 'UUP', 'TYD']

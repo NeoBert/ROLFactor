@@ -84,7 +84,7 @@ class Algo(object):
         self.init_step(X)
         for t, (_, x) in enumerate(X.iterrows()):
             # save weights
-            B.ix[t] = last_b
+            B.iloc[t] = last_b
 
             # keep initial weights for min_history
             if t < min_history:
@@ -147,7 +147,7 @@ class Algo(object):
                 ix_blocks = self._split_index(X.index, pool._processes * 2, self.frequency)
                 min_histories = np.maximum(np.cumsum([0] + map(len, ix_blocks[:-1])) - 1, self.min_history)
 
-                B_blocks = pool.map(_parallel_weights, [(self, X.ix[:ix_block[-1]], min_history, log_progress)
+                B_blocks = pool.map(_parallel_weights, [(self, X.iloc[:ix_block[-1]], min_history, log_progress)
                                     for ix_block, min_history in zip(ix_blocks, min_histories)])
 
             # join weights to one dataframe
@@ -224,7 +224,7 @@ class Algo(object):
             # normalize prices so that they start with 1.
             r = {}
             for name, s in S.iteritems():
-                init_val = s.ix[s.first_valid_index()]
+                init_val = s.iloc[s.first_valid_index()]
                 r[name] = s / init_val
             X = pd.DataFrame(r)
 

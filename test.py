@@ -26,5 +26,8 @@ test = DataReader(etfs, 'yahoo', start=test_start, end=test_end)['Adj Close']
 train_b = DataReader(benchmark, 'yahoo', start=train_start, end=train_end)['Adj Close']
 test_b = DataReader(benchmark, 'yahoo', start=test_start, end=test_end)['Adj Close']
 
-ax1 = (train / train.iloc[0, :]).plot()
-(train_b / train_b.iloc[0, :]).plot(ax=ax1)
+from algorithm.corn import CORN
+from algorithm.pamr import PAMR
+corn = PAMR
+result = corn.run(train)
+print(result)

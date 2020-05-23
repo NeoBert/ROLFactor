@@ -99,11 +99,11 @@ class CORN(Algo):
             window = self.window
             m = len(x)
 
-            X_t = self.X_flat.ix[self.t]
+            X_t = self.X_flat.iloc[self.t]
             X_i = self.X_flat.iloc[window-1 : self.t]
             c = X_i.apply(lambda r: np.corrcoef(r.values, X_t.values)[0,1], axis=1)
 
-            C = self.X.ix[c.index[c >= self.rho] + 1]
+            C = self.X.iloc[c.index[c >= self.rho] + 1]
 
             if C.shape[0] == 0:
                 b = np.ones(m) / float(m)
