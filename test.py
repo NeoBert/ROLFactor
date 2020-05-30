@@ -31,3 +31,4 @@ from algorithm.pamr import PAMR
 corn = PAMR
 result = corn.run(train)
 print(result)
+
