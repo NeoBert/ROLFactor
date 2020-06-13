@@ -12,9 +12,11 @@ class Stock:
         assert end_date > start_date
         self.start_date = start_date
         self.end_date = end_date
-        self.dir_path = '/dataset/china_daily'
+        self.dir_path = 'dataset/china_daily'
         self.stock_dates = os.listdir(self.dir_path)
-        self.all_stock_csv = None
+        self.all_stock_price = None
+        self.nstock = None
+        self.ntime = None
 
     def _update_stock_info(self):
         print(">>START UPDATE STOCK INFO IN DATABASE<<")
@@ -44,19 +46,22 @@ class Stock:
             stock_csv.rename(columns={'close': current_day.strftime('%Y-%m-%d')}, inplace=True)
             stock_csv = pd.DataFrame(stock_csv.values.T, index=stock_csv.columns, columns=stock_csv.index)
             all_stock_csv = pd.concat((all_stock_csv, stock_csv), axis=0)
-        self.all_stock_csv = all_stock_csv
+        self.all_stock_price = all_stock_csv
 
     def _generate_relative_price(self):
-        all_stock_csv = self.all_stock_csv
+        all_stock_csv = self.all_stock_price
         all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1)
         all_relative_price_csv = all_relative_price_csv.drop(all_relative_price_csv.index[0])
         all_relative_price_csv = all_relative_price_csv.dropna(axis=1)
-        return all_relative_price_csv
+        self.all_stock_price = all_relative_price_csv
 
     def generate_data_frame(self, method="relative"):
         assert method in ["relative", "absolute"]
         self._update_stock_info()
         self._generate_all_stock_csv()
         if method == "absolute":
-            return self.all_stock_csv
+            return self.all_stock_price
         self._generate_relative_price()
+        self.ntime, self.nstock = self.all_stock_price.shape
+        self.all_stock_price = self.all_stock_price.values.tolist()
+

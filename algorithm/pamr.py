@@ -2,10 +2,11 @@ import pandas as pd
 from os.path import abspath, join, dirname, exists
 import os
 import numpy as np
+from tqdm import tqdm
 
 
 class Pamr(object):
-    def __init__(self, n_stock, version='ver1', param=dict(), dataset_name=''):
+    def __init__(self, n_stock):
         """
         Variable:   n_stock: number of stock
                     version: version of relative price
@@ -16,17 +17,14 @@ class Pamr(object):
                     variant: Variants 0, 1, 2 are available.
         """
         self.n_stock = n_stock
-        self.version = version
         self.name = 'pamr'
         self.weights = []
         # method parameter
-        self.variant = 0 if 'variant' not in param.keys() else param['variant']
-        self.eps = 0.5 if 'epsilon' not in param.keys() else param['epsilon']
-        self.c = 500 if 'c' not in param.keys() else param['c']
+        self.variant = 0
+        self.eps = 0.5
+        self.c = 500
 
-        assert self.variant in [0, 1, 2]
-
-    def compute_weight(self, relative_price, stock_feature=None):
+    def compute_weight(self, relative_price):
         """
         Function:   compute portfolio weight
         Input:      relative_price: float-list (n_time, n_stock)
@@ -34,12 +32,9 @@ class Pamr(object):
                     stock_feature: float-list (n_time, n_stock, n_feature)
                                     stock_feature from [0, n_time - 1]
         """
-        if self.version == 'ver0':
-            relative_price_array = np.array(relative_price) / 100 + 1
-        else:
-            relative_price_array = np.array(relative_price)
+        relative_price_array = np.array(relative_price) / 100 + 1
 
-        for t in range(len(relative_price_array)):
+        for t in tqdm(range(len(relative_price_array))):
             if t == 0:
                 weight = [1 / self.n_stock] * self.n_stock
             else:
