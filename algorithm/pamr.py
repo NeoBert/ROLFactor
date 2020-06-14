@@ -1,8 +1,28 @@
-import pandas as pd
-from os.path import abspath, join, dirname, exists
-import os
 import numpy as np
-from tqdm import tqdm
+
+
+def simplex_proj(b):
+    """
+    Function:       project weight into delta-m field (w_i > 0, sigma w_i = 1) in linear time cost
+    Input:          b: weight array (n_stock)
+    """
+    m = len(b)
+    bget = False
+
+    s = sorted(b, reverse=True)
+    tmpsum = 0.
+
+    for ii in range(m - 1):
+        tmpsum = tmpsum + s[ii]
+        tmax = (tmpsum - 1) / (ii + 1)
+        if tmax >= s[ii + 1]:
+            bget = True
+            break
+
+    if not bget:
+        tmax = (tmpsum + s[m - 1] - 1) / m
+
+    return np.maximum(b - tmax, 0.)
 
 
 class Pamr(object):
@@ -32,9 +52,8 @@ class Pamr(object):
                     stock_feature: float-list (n_time, n_stock, n_feature)
                                     stock_feature from [0, n_time - 1]
         """
-        relative_price_array = np.array(relative_price) / 100 + 1
-
-        for t in tqdm(range(len(relative_price_array))):
+        relative_price_array = np.array(relative_price)
+        for t in range(len(relative_price_array)):
             if t == 0:
                 weight = [1 / self.n_stock] * self.n_stock
             else:
@@ -52,28 +71,5 @@ class Pamr(object):
 
                 lam = min(100000, lam)
                 b = b - lam * (x - x_mean)
-                weight = list(w for w in self.simplex_proj(b))
+                weight = list(w for w in simplex_proj(b))
             self.weights.append(weight)
-
-    def simplex_proj(self, b):
-        """
-        Function:       project weight into delta-m field (w_i > 0, sigma w_i = 1) in linear time cost
-        Input:          b: weight array (n_stock)
-        """
-        m = len(b)
-        bget = False
-
-        s = sorted(b, reverse=True)
-        tmpsum = 0.
-
-        for ii in range(m - 1):
-            tmpsum = tmpsum + s[ii]
-            tmax = (tmpsum - 1) / (ii + 1)
-            if tmax >= s[ii + 1]:
-                bget = True
-                break
-
-        if not bget:
-            tmax = (tmpsum + s[m - 1] - 1) / m
-
-        return np.maximum(b - tmax, 0.)

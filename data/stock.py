@@ -4,6 +4,14 @@ import datetime
 import time
 import pandas as pd
 from os.path import join
+from tqdm import tqdm
+
+
+def _generate_relative_price(all_stock_csv):
+    all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1)
+    all_relative_price_csv = all_relative_price_csv.drop(all_relative_price_csv.index[0])
+    all_relative_price_csv = all_relative_price_csv.dropna(axis=1)
+    return all_relative_price_csv
 
 
 class Stock:
@@ -12,11 +20,8 @@ class Stock:
         assert end_date > start_date
         self.start_date = start_date
         self.end_date = end_date
-        self.dir_path = 'dataset/china_daily'
+        self.dir_path = 'dataset/china_stock_daily'
         self.stock_dates = os.listdir(self.dir_path)
-        self.all_stock_price = None
-        self.nstock = None
-        self.ntime = None
 
     def _update_stock_info(self):
         print(">>START UPDATE STOCK INFO IN DATABASE<<")
@@ -34,6 +39,26 @@ class Stock:
                 except:
                     time.sleep(1)
 
+    def _generate_financial_info(self, csv):
+        print(">>START UPDATE STOCK FINANCIAL IN DATABASE<<")
+        end_date = self.start_date
+        start_date = end_date - datetime.timedelta(180)
+        stock_finance = os.listdir(self.dir_path)
+
+        all_stock_csv = pd.DataFrame()
+        # 由于不同公司公告日不相同，可能可比性会适当降低
+        for ts_code in tqdm(csv.columns.tolist()):
+            while True:
+                try:
+                    stock_csv = self.pro.income(ts_code=ts_code, start_date=start_date.strftime("%Y%m%d"),
+                                                end_date=end_date.strftime("%Y%m%d"),
+                                                fields='ts_code,ann_date,f_ann_date,end_date,report_type,comp_type,basic_eps,diluted_eps')
+                    stock_csv = stock_csv.iloc[-1]
+                    all_stock_csv = pd.concat((all_stock_csv, stock_csv), axis=0)
+                    break
+                except:
+                    time.sleep(1)
+
     def _generate_all_stock_csv(self):
         print(">>START GENERATE ALL STOCK INFO IN DATABASE<<")
         all_stock_csv = pd.DataFrame()
@@ -46,22 +71,17 @@ class Stock:
             stock_csv.rename(columns={'close': current_day.strftime('%Y-%m-%d')}, inplace=True)
             stock_csv = pd.DataFrame(stock_csv.values.T, index=stock_csv.columns, columns=stock_csv.index)
             all_stock_csv = pd.concat((all_stock_csv, stock_csv), axis=0)
-        self.all_stock_price = all_stock_csv
+        return all_stock_csv
 
-    def _generate_relative_price(self):
-        all_stock_csv = self.all_stock_price
-        all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1)
-        all_relative_price_csv = all_relative_price_csv.drop(all_relative_price_csv.index[0])
-        all_relative_price_csv = all_relative_price_csv.dropna(axis=1)
-        self.all_stock_price = all_relative_price_csv
-
-    def generate_data_frame(self, method="relative"):
-        assert method in ["relative", "absolute"]
+    def generate_data_frame(self, mode="random", finance=True):
         self._update_stock_info()
-        self._generate_all_stock_csv()
-        if method == "absolute":
-            return self.all_stock_price
-        self._generate_relative_price()
-        self.ntime, self.nstock = self.all_stock_price.shape
-        self.all_stock_price = self.all_stock_price.values.tolist()
-
+        csv = self._generate_all_stock_csv()
+        csv = _generate_relative_price(csv)
+        csv = csv.dropna(axis=0)
+        if mode == "random":
+            csv = csv.sample(frac=0.1, axis=1)
+        self._generate_financial_info(csv)
+        ntime, nstock = csv.shape
+        print("Duration:" + str(ntime))
+        print("Number of N stock:" + str(nstock))
+        return csv.values.tolist()
