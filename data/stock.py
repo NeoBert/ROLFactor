@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 def _generate_relative_price(all_stock_csv):
-    all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1)
+    all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1) - 1
     all_relative_price_csv = all_relative_price_csv.drop(all_relative_price_csv.index[0])
     all_relative_price_csv = all_relative_price_csv.dropna(axis=1)
     return all_relative_price_csv
@@ -80,7 +80,6 @@ class Stock:
         csv = csv.dropna(axis=0)
         if mode == "random":
             csv = csv.sample(frac=0.1, axis=1)
-        self._generate_financial_info(csv)
         ntime, nstock = csv.shape
         print("Duration:" + str(ntime))
         print("Number of N stock:" + str(nstock))
