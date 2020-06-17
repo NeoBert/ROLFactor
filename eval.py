@@ -10,30 +10,7 @@ parent_dir_writer = abspath(join(dirname(__file__), 'result/statistic'))
 
 class Eval(object):
     # Evaluation of result
-    def __init__(self, relative_price=None, version='ver1', weight=None, frequency='daily', transaction_cost=0):
-        """
-        Input:      relative_price: list (n_time, n_stock)
-                    version: string, version of relative_price
-                            'ver0': (relative price - 1) * 100
-                            'ver1': relative price
-                    weight: list (n_time, n_stock)
-                    frequency: string (monthly, weekly, daily)
-                    transaction_cost: float
-        Variable:   n_time: int
-                    frequency: frequency of dataset
-                    transaction_cost: float
-                    metrics: string-list
-                    gross_returns: list (n_time)
-                    cumulative_returns: list (n_time)
-                    cumulative_wealth: float
-                    apy: float
-                    sharp_ratio: float
-                    calmar_ratio: float
-                    max_drawdown: float
-                    volatility: float
-                    turnover: float
-                    turnover_list: float-list (n_time)
-        """
+    def __init__(self, relative_price=None, weight=None, frequency='daily', transaction_cost=0):
         if weight is None:
             weight = []
         if relative_price is None:
@@ -41,17 +18,9 @@ class Eval(object):
         self.n_time = len(relative_price)
         self.frequency = frequency
         self.transaction_cost = transaction_cost
-        self.metrics = ['cumulative_wealth',
-                        'apy',
-                        'sharp_ratio',
-                        'calmar_ratio',
-                        'max_drawdown',
-                        'volatility',
-                        'turnover']
-        if version == 'ver0':
-            relative_price = np.array(relative_price) / 100 + 1
+        self.metrics = ['cumulative_wealth', 'apy', 'sharp_ratio', 'calmar_ratio',
+                        'max_drawdown', 'volatility', 'turnover']
         self.turnover_list = []
-
         self.gross_returns = []
         rp_w = relative_price * np.array(weight)
         rp_w_sum = rp_w.sum(axis=1)
@@ -64,16 +33,10 @@ class Eval(object):
             self.turnover_list.append(l1_norm)
             gross_return = rp_w_sum[i] * (1 - self.transaction_cost * l1_norm)
             self.gross_returns.append(gross_return)
-        # fake turnover
-        # self.test_list = []
-        # weight_test_array = np.array(weight)
-        # weight_test_array[-1] = weight_next_array[-1]
-        # delta = np.abs(weight_next_array - weight_test_array)
-        # for i in range(rp_w.shape[0]):
-        #     self.test_list.append(delta[i].sum())
 
         self.cumulative_returns = []
         cumulative_return = 1
+
         for gross_return in self.gross_returns:
             cumulative_return = cumulative_return * gross_return
             self.cumulative_returns.append(cumulative_return)
@@ -144,11 +107,11 @@ class Eval(object):
         print('Turnover:            %.3f' % (100 * self.turnover))
 
     def gen_df(self, data=[]):
-        '''
+        """
         Function:   generate DataFrame
         Input:      data: list (n_data)
         Output:     res: DataFrame
-        '''
+        """
         res = pd.DataFrame()
         if len(data) == 0:
             res['cumulative_wealth'] = [self.cumulative_wealth]
@@ -164,25 +127,25 @@ class Eval(object):
         return res
 
     def write_info(self, file_name):
-        '''
+        """
         Function:   write evaluation results
         Input:      file_name: name of file
-        '''
+        """
         file_name = 'eval-' + file_name + '-c=' + str(self.transaction_cost) + '.csv'
         path = join(parent_dir_writer, 'eval')
-        if exists(path) == False:
-            os.mkdir(path)
+        if not exists(path):
+            os.makedirs(path)
         path = abspath(join(path, file_name))
         info = self.gen_df()
         info.to_csv(path, index=False, sep=',')
 
     def dup_write_info(self, file_name, dup=0, is_last=False):
-        '''
+        """
         Function:   write evaluation results with duplication
         Input:      file_name: name of file
                     dup: int
                     is_last: bool
-        '''
+        """
         if dup == 0:
             self.write_info('dup-' + file_name)
         else:
@@ -199,10 +162,10 @@ class Eval(object):
             info.to_csv(path, index=False, sep=',')
 
     def write_cumulative_wealth(self, file_name):
-        '''
+        """
         Function:   write cumulative wealth
         Input:      file_name: name of file
-        '''
+        """
         file_name = 'cw-' + file_name + '-c=' + str(self.transaction_cost) + '.csv'
         path = join(parent_dir_writer, 'cw')
         if exists(path) == False:
@@ -212,10 +175,10 @@ class Eval(object):
         pd_data.to_csv(path, index=False, sep=',')
 
     def write_periodic_return(self, file_name):
-        '''
+        """
         Function:   write gross return of each period
         Input:      file_name: name of file
-        '''
+        """
         file_name = 'return-' + file_name + '-c=' + str(self.transaction_cost) + '.csv'
         path = join(parent_dir_writer, 'return')
         if exists(path) == False:

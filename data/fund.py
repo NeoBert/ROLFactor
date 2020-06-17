@@ -60,8 +60,8 @@ class Fund(object):
         csv = csv.dropna(axis=0)
         if mode == "random":
             csv = csv.sample(frac=0.1, axis=1)
-        if frequency == "weekly":
-            csv = csv.iloc[0:len(csv):5]
+        # if frequency == "weekly":
+        #     csv = csv.iloc[0:len(csv):5]
         ntime, nfund = csv.shape
         print("Duration:" + str(ntime))
         print("Number of N fund:" + str(nfund))

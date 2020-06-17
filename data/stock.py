@@ -5,10 +5,11 @@ import time
 import pandas as pd
 from os.path import join
 from tqdm import tqdm
+import json
 
 
 def _generate_relative_price(all_stock_csv):
-    all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1) - 1
+    all_relative_price_csv = all_stock_csv / all_stock_csv.shift(1)
     all_relative_price_csv = all_relative_price_csv.drop(all_relative_price_csv.index[0])
     all_relative_price_csv = all_relative_price_csv.dropna(axis=1)
     return all_relative_price_csv
@@ -76,10 +77,45 @@ class Stock:
     def generate_data_frame(self, mode="random", finance=True):
         self._update_stock_info()
         csv = self._generate_all_stock_csv()
+        if mode == "SZ500":
+            index_csv = self.pro.index_weight(index_code='399300.SZ', start_date=self.start_date.strftime('%Y-%m-%d')
+                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
+            tradedate = index_csv['trade_date'].tolist()
+            tradedate = list(set(tradedate))[-1]
+            index_csv = index_csv[index_csv['trade_date'] == tradedate]
+            codes = index_csv['con_code'].tolist()
+            csv = csv[codes]
+        if mode == "SH500":
+            index_csv = self.pro.index_weight(index_code='000905.SH', start_date=self.start_date.strftime('%Y-%m-%d')
+                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
+            tradedate = index_csv['trade_date'].tolist()
+            tradedate = list(set(tradedate))[-1]
+            index_csv = index_csv[index_csv['trade_date'] == tradedate]
+            codes = index_csv['con_code'].tolist()
+            csv = csv[codes]
+        if mode == "SH50":
+            index_csv = self.pro.index_weight(index_code='000016.SH', start_date=self.start_date.strftime('%Y-%m-%d')
+                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
+            tradedate = index_csv['trade_date'].tolist()
+            tradedate = list(set(tradedate))[-1]
+            index_csv = index_csv[index_csv['trade_date'] == tradedate]
+            codes = index_csv['con_code'].tolist()
+            csv = csv[codes]
+        if mode == "ZZ100":
+            index_csv = self.pro.index_weight(index_code='000903.SH', start_date=self.start_date.strftime('%Y-%m-%d')
+                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
+            tradedate = index_csv['trade_date'].tolist()
+            tradedate = list(set(tradedate))[-1]
+            index_csv = index_csv[index_csv['trade_date'] == tradedate]
+            codes = index_csv['con_code'].tolist()
+            csv = csv[codes]
         csv = _generate_relative_price(csv)
         csv = csv.dropna(axis=0)
         if mode == "random":
-            csv = csv.sample(frac=0.1, axis=1)
+            csv = csv.sample(n=10, axis=1, random_state=999)
+        if mode == "last50":
+            index = csv.columns.tolist()[-50:]
+            csv = csv[index]
         ntime, nstock = csv.shape
         print("Duration:" + str(ntime))
         print("Number of N stock:" + str(nstock))
