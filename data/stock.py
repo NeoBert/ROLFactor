@@ -39,25 +39,6 @@ class Stock:
                 except:
                     time.sleep(1)
 
-    def _generate_financial_info(self, csv):
-        end_date = self.start_date
-        start_date = end_date - datetime.timedelta(180)
-        stock_finance = os.listdir(self.dir_path)
-
-        all_stock_csv = pd.DataFrame()
-        # 由于不同公司公告日不相同，可能可比性会适当降低
-        for ts_code in tqdm(csv.columns.tolist()):
-            while True:
-                try:
-                    stock_csv = self.pro.income(ts_code=ts_code, start_date=start_date.strftime("%Y%m%d"),
-                                                end_date=end_date.strftime("%Y%m%d"),
-                                                fields='ts_code,ann_date,f_ann_date,end_date,report_type,comp_type,basic_eps,diluted_eps')
-                    stock_csv = stock_csv.iloc[-1]
-                    all_stock_csv = pd.concat((all_stock_csv, stock_csv), axis=0)
-                    break
-                except:
-                    time.sleep(1)
-
     def _generate_all_stock_csv(self):
         all_stock_csv = pd.DataFrame()
         for day in range((self.end_date - self.start_date).days + 1):
@@ -74,26 +55,34 @@ class Stock:
     def _get_correspond_index(self, mode, current_year):
         while True:
             try:
-                if mode == "SZ500":
+                filename = "{}-{}".format(datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'), mode)
+                filepath = join("dataset/china_index", filename)
+                if os.path.exists(filepath):
+                    index_csv = pd.read_csv(filepath)
+                elif mode == "SZ500":
                     index_csv = self.pro.index_weight(index_code='399300.SZ',
                                                       start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
                                                       end_date=datetime.date(current_year + 1, 1, 1).strftime(
                                                           '%Y-%m-%d'))
+                    index_csv.to_csv(filepath, index=False)
                 elif mode == "SH500":
                     index_csv = self.pro.index_weight(index_code='000905.SH',
                                                       start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
                                                       end_date=datetime.date(current_year + 1, 1, 1).strftime(
                                                           '%Y-%m-%d'))
+                    index_csv.to_csv(filepath, index=False)
                 elif mode == "SH50":
                     index_csv = self.pro.index_weight(index_code='000016.SH',
                                                       start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
                                                       end_date=datetime.date(current_year + 1, 1, 1).strftime(
                                                           '%Y-%m-%d'))
+                    index_csv.to_csv(filepath, index=False)
                 elif mode == "ZZ100":
                     index_csv = self.pro.index_weight(index_code='000903.SH',
                                                       start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
                                                       end_date=datetime.date(current_year + 1, 1, 1).strftime(
                                                           '%Y-%m-%d'))
+                    index_csv.to_csv(filepath, index=False)
                 return index_csv
             except:
                 time.sleep(1)
