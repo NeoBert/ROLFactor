@@ -47,3 +47,35 @@ class BanditExp3(object):
                 return index
             index += 1
         return len(weights) - 1
+
+
+class BanditUcb(object):
+    def __init__(self, n_dataset, n_method):
+        """
+        Variable:   n_comb: number of combination
+        """
+        self.n_comb = n_dataset * n_method
+        # method update parameter
+        self.__w = [1 for i in range(self.n_comb)]
+
+
+    def choose(self, n_round):
+        """
+        Function:   choose an arm
+        Input:      n_round: index of round
+        Output:     chosen_idx: int
+        """
+        mean = np.array(self.__w)
+        bound = np.sqrt(2 * np.log(n_round) / mean)
+        chosen_idx = np.argmax(mean / n_round + bound)
+        return chosen_idx
+
+    def update(self, score):
+        """
+        Function:   update w
+        Input:      score: float-list (n_dataset * n_method)
+        """
+        # full feedback
+        score = (score - np.min(score)) / (np.max(score) - np.min(score))
+        for i in range(len(self.__w)):
+            self.__w[i] += score[i]
