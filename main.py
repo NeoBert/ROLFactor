@@ -6,11 +6,11 @@ from algorithm.olps.corn import CORN
 from eval import Eval
 
 # 获取该时间段下的所有数据
-
-stock_mode = "SH50"
-stock = Stock(start_date=datetime.date(2019, 1, 1), end_date=datetime.date(2020, 1, 1))
+stock_mode = "SZ500"
+stock = Stock(start_date=datetime.date(2012, 1, 1), end_date=datetime.date(2020, 1, 1))
 frame = stock.generate_data_frame(mode=stock_mode)
-
+frame.to_csv("7year.csv")
+exit()
 # 选择相应的算法
 algo_name = "CORN"
 algo = CORN(n_stock=len(frame[0]))

@@ -1,17 +1,16 @@
 # Online newton step
 
 import pandas as pd
-from os.path import abspath, join, dirname, exists
+from os.path import abspath, join, exists
 import os
 import numpy as np
-from cvxopt import solvers, matrix
 import cvxpy as cp
+from cvxopt import solvers, matrix
 
-parent_dir_writer = abspath(join(dirname(__file__), '../result/statistic/weight'))
+parent_dir_writer = abspath('result/statistic/weight')
 
 
 class ONS(object):
-    # Online newton step method
     def __init__(self, n_stock):
         """
         Variable:   n_stock: number of stock
@@ -25,7 +24,6 @@ class ONS(object):
                     b: np.mat (n_stock, 1)
         """
         self.n_stock = n_stock
-        self.name = 'ons'
         self.weights = []
         # method parameter
         self.eta = 0.1
@@ -35,7 +33,7 @@ class ONS(object):
         self.__A = np.mat(np.eye(self.n_stock))
         self.__b = np.mat(np.zeros(self.n_stock)).T
 
-    def compute_weight(self, relative_price, stock_feature=None):
+    def compute_weight(self, relative_price):
         """
         Function:   compute portfolio weight
         Input:      relative_price: float-list (n_time, n_stock)
@@ -43,8 +41,7 @@ class ONS(object):
                     stock_feature: float-list (n_time, n_stock, n_feature)
                                     stock_feature from [0, n_time - 1]
         """
-        relative_price = np.array(relative_price) / 100 + 1 if self.version == 'ver0' \
-            else np.array(relative_price)
+        relative_price = np.array(relative_price)
         for t in range(len(relative_price)):
             # equal weight in the first round
             if t == 0:
@@ -69,21 +66,21 @@ class ONS(object):
                     projection_space: np.mat (n_stock, n_stock)
         Output:     result: optimization result, np.array(n_stock)
         """
-        p = cp.Variable(self.n_stock)
-        G = -np.eye(self.n_stock)
-        h = np.zeros(self.n_stock)
-        A = projection_space
-        b = objective
+        P = matrix(2 * projection_space)
+        q = matrix(-2 * projection_space * objective)
+        G = matrix(-1 * np.eye(self.n_stock))
+        h = matrix(np.zeros((self.n_stock, 1)))
+        A = matrix(np.ones((1, self.n_stock)))
+        b = matrix(1.)
 
-        obj = cp.Minimize(0.5 * cp.quad_form(p, 2 * A) - (2 * b.T) @ p)
-        cons = [G @ p <= h, cp.sum(p) == 1]
-        prob = cp.Problem(obj, cons)
-        prob.solve(cp.CVXOPT)
-        return np.array(p.value)
+        solvers.options['show_progress'] = False
+        sol = solvers.qp(P, q, G, h, A, b)
+        result = np.squeeze(sol['x'])
+        return result
 
     def write_weight(self, file_name):
         file_name = 'weight-' + file_name + '.csv'
-        if exists(parent_dir_writer) == False:
+        if not exists(parent_dir_writer):
             os.mkdir(parent_dir_writer)
         path = abspath(join(parent_dir_writer, file_name))
         pd_data = pd.DataFrame(self.weights)

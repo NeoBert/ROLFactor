@@ -3,7 +3,7 @@ from os.path import abspath, join, dirname, exists
 import os
 import numpy as np
 
-parent_dir_writer = abspath(join(dirname(__file__), '../result/statistic/weight'))
+parent_dir_writer = abspath('../result/statistic/weight')
 
 
 class Anticor(object):

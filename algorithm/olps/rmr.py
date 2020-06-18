@@ -3,11 +3,11 @@ from os.path import abspath, join, dirname, exists
 import os
 import numpy as np
 
-parent_dir_writer = abspath(join(dirname(__file__), '../result/statistic/weight'))
+parent_dir_writer = abspath('result/statistic/weight')
 
 
 class Rmr(object):
-    def __init__(self, n_stock,proj="simplex"):
+    def __init__(self, n_stock, proj="simplex"):
         """
         Variable:   n_stock: number of stock
                     version: version of relative price
@@ -87,7 +87,7 @@ class Rmr(object):
                 tmax = (tmpsum + s[m - 1] - 1) / m
             return np.maximum(b - tmax, 0.)
         elif proj == "softmax":
-            power = np.power(np.e, b)
+            power = np.exp(b)
             return power / np.sum(power)
 
     def write_weight(self, file_name):

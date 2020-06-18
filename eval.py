@@ -56,7 +56,7 @@ class Eval(object):
         if self.frequency == 'monthly':
             year = self.n_time / 11.45  # 252/22
         elif self.frequency == 'weekly':
-            year = self.n_time / 50.4  # 252/5
+            year = self.n_time / 50.4
         elif self.frequency == 'daily':
             year = self.n_time / 252
         return np.power(self.cumulative_wealth, 1 / year) - 1

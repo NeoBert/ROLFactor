@@ -1,4 +1,9 @@
+import pandas as pd
+from os.path import abspath, join, dirname, exists
+import os
 import numpy as np
+
+parent_dir_writer = abspath('result/statistic/weight')
 
 
 def simplex_proj(b):
@@ -73,3 +78,11 @@ class Pamr(object):
                 b = b - lam * (x - x_mean)
                 weight = list(w for w in simplex_proj(b))
             self.weights.append(weight)
+
+    def write_weight(self, file_name):
+        file_name = 'weight-' + file_name + '.csv'
+        if not exists(parent_dir_writer):
+            os.mkdir(parent_dir_writer)
+        path = abspath(join(parent_dir_writer, file_name))
+        pd_data = pd.DataFrame(self.weights)
+        pd_data.to_csv(path, index=False, sep=',')

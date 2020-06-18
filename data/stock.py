@@ -5,7 +5,6 @@ import time
 import pandas as pd
 from os.path import join
 from tqdm import tqdm
-import json
 
 
 def _generate_relative_price(all_stock_csv):
@@ -23,11 +22,11 @@ class Stock:
         self.end_date = end_date
         self.dir_path = 'dataset/china_stock_daily'
         self.stock_dates = os.listdir(self.dir_path)
+        self._update_stock_info()
+        self.csv = self._generate_all_stock_csv()
 
     def _update_stock_info(self):
-        print(">>START UPDATE STOCK INFO IN DATABASE<<")
         for day in range((self.end_date - self.start_date).days + 1):
-            # 判断当前日期是否已经存在数据
             current_day = self.start_date + datetime.timedelta(days=day)
             if current_day.strftime("%Y-%m-%d") in self.stock_dates:
                 continue
@@ -41,7 +40,6 @@ class Stock:
                     time.sleep(1)
 
     def _generate_financial_info(self, csv):
-        print(">>START UPDATE STOCK FINANCIAL IN DATABASE<<")
         end_date = self.start_date
         start_date = end_date - datetime.timedelta(180)
         stock_finance = os.listdir(self.dir_path)
@@ -61,7 +59,6 @@ class Stock:
                     time.sleep(1)
 
     def _generate_all_stock_csv(self):
-        print(">>START GENERATE ALL STOCK INFO IN DATABASE<<")
         all_stock_csv = pd.DataFrame()
         for day in range((self.end_date - self.start_date).days + 1):
             current_day = self.start_date + datetime.timedelta(days=day)
@@ -74,49 +71,56 @@ class Stock:
             all_stock_csv = pd.concat((all_stock_csv, stock_csv), axis=0)
         return all_stock_csv
 
-    def generate_data_frame(self, mode="random", finance=True):
-        self._update_stock_info()
-        csv = self._generate_all_stock_csv()
-        if mode == "SZ500":
-            index_csv = self.pro.index_weight(index_code='399300.SZ', start_date=self.start_date.strftime('%Y-%m-%d')
-                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
+    def _get_correspond_index(self, mode, current_year):
+        while True:
+            try:
+                if mode == "SZ500":
+                    index_csv = self.pro.index_weight(index_code='399300.SZ',
+                                                      start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
+                                                      end_date=datetime.date(current_year + 1, 1, 1).strftime(
+                                                          '%Y-%m-%d'))
+                elif mode == "SH500":
+                    index_csv = self.pro.index_weight(index_code='000905.SH',
+                                                      start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
+                                                      end_date=datetime.date(current_year + 1, 1, 1).strftime(
+                                                          '%Y-%m-%d'))
+                elif mode == "SH50":
+                    index_csv = self.pro.index_weight(index_code='000016.SH',
+                                                      start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
+                                                      end_date=datetime.date(current_year + 1, 1, 1).strftime(
+                                                          '%Y-%m-%d'))
+                elif mode == "ZZ100":
+                    index_csv = self.pro.index_weight(index_code='000903.SH',
+                                                      start_date=datetime.date(current_year, 1, 1).strftime('%Y-%m-%d'),
+                                                      end_date=datetime.date(current_year + 1, 1, 1).strftime(
+                                                          '%Y-%m-%d'))
+                return index_csv
+            except:
+                time.sleep(1)
+
+    def generate_data_frame(self, current_year, mode="random"):
+        csv = self.csv
+        if mode == "SZ500" or mode == "SH500" or mode == "SH50" or mode == "ZZ100":
+            index_csv = self._get_correspond_index(mode, current_year)
             tradedate = index_csv['trade_date'].tolist()
-            tradedate = list(set(tradedate))[-1]
+            tradedate = list(set(tradedate))[0]
             index_csv = index_csv[index_csv['trade_date'] == tradedate]
-            codes = index_csv['con_code'].tolist()
-            csv = csv[codes]
-        if mode == "SH500":
-            index_csv = self.pro.index_weight(index_code='000905.SH', start_date=self.start_date.strftime('%Y-%m-%d')
-                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
-            tradedate = index_csv['trade_date'].tolist()
-            tradedate = list(set(tradedate))[-1]
-            index_csv = index_csv[index_csv['trade_date'] == tradedate]
-            codes = index_csv['con_code'].tolist()
-            csv = csv[codes]
-        if mode == "SH50":
-            index_csv = self.pro.index_weight(index_code='000016.SH', start_date=self.start_date.strftime('%Y-%m-%d')
-                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
-            tradedate = index_csv['trade_date'].tolist()
-            tradedate = list(set(tradedate))[-1]
-            index_csv = index_csv[index_csv['trade_date'] == tradedate]
-            codes = index_csv['con_code'].tolist()
-            csv = csv[codes]
-        if mode == "ZZ100":
-            index_csv = self.pro.index_weight(index_code='000903.SH', start_date=self.start_date.strftime('%Y-%m-%d')
-                                              , end_date=self.end_date.strftime('%Y-%m-%d'))
-            tradedate = index_csv['trade_date'].tolist()
-            tradedate = list(set(tradedate))[-1]
-            index_csv = index_csv[index_csv['trade_date'] == tradedate]
-            codes = index_csv['con_code'].tolist()
+            codes = index_csv['con_code']
+            codes = list(set(codes) & set(csv.columns))
             csv = csv[codes]
         csv = _generate_relative_price(csv)
         csv = csv.dropna(axis=0)
         if mode == "random":
-            csv = csv.sample(n=10, axis=1, random_state=999)
+            if len(csv.columns) > 30:
+                csv = csv.sample(n=30, axis=1, random_state=999)
         if mode == "last50":
             index = csv.columns.tolist()[-50:]
             csv = csv[index]
+        if len(csv.columns) > 50:
+            codes = csv.columns.tolist()
+            codes = codes[-50:]
+            csv = csv[codes]
         ntime, nstock = csv.shape
-        print("Duration:" + str(ntime))
-        print("Number of N stock:" + str(nstock))
+        if nstock <= 1:
+            raise Exception
         return csv.values.tolist()
