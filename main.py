@@ -4,13 +4,11 @@ from algorithm.olps.anticor import Anticor
 from algorithm.olps.rmr import Rmr
 from algorithm.olps.corn import CORN
 from eval import Eval
-
+import numpy as np
 # 获取该时间段下的所有数据
 stock_mode = "SZ500"
-stock = Stock(start_date=datetime.date(2012, 1, 1), end_date=datetime.date(2020, 1, 1))
-frame = stock.generate_data_frame(mode=stock_mode)
-frame.to_csv("7year.csv")
-exit()
+stock = Stock(start_date=datetime.date(2019, 3, 1), end_date=datetime.date(2020, 1, 1))
+frame = stock.generate_data_frame(mode=stock_mode, current_year=2019)
 # 选择相应的算法
 algo_name = "CORN"
 algo = CORN(n_stock=len(frame[0]))
@@ -23,6 +21,6 @@ evaluate = Eval(relative_price=frame,
                 frequency='daily',
                 transaction_cost=0.000)
 evaluate.print_info()
-evaluate.write_info(algo_name + '-' + stock_mode)
-evaluate.write_cumulative_wealth(algo_name + '-' + stock_mode)
-evaluate.write_periodic_return(algo_name + '-' + stock_mode)
+# evaluate.write_info(algo_name + '-' + stock_mode)
+# evaluate.write_cumulative_wealth(algo_name + '-' + stock_mode)
+# evaluate.write_periodic_return(algo_name + '-' + stock_mode)

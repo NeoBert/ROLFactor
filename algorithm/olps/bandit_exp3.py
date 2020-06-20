@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import random
 
 
 class BanditExp3(object):
@@ -14,7 +15,7 @@ class BanditExp3(object):
         self.__w = [1 for i in range(self.n_comb)]
         self.__p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
 
-    def choose(self):
+    def choose(self, context):
         """
         Function:   choose an arm
         Output:     chosen_idx: int
@@ -29,9 +30,9 @@ class BanditExp3(object):
         Input:      score: float-list (n_dataset * n_method)
         """
         # full feedback
-        score = (score - np.min(score)) / (np.max(score) - np.min(score))
+        # score = (score - np.min(score)) / (np.max(score) - np.min(score))
         for i in range(len(self.__w)):
-            self.__w[i] *= np.exp(self.gamma * score[i] / self.n_comb / (self.__p[i] + 1e-3))
+            self.__w[i] *= np.exp(self.gamma * score[i] / self.n_comb / (self.__p[i]))
 
     def __draw(self, weights):
         """
@@ -58,7 +59,6 @@ class BanditUcb(object):
         # method update parameter
         self.__w = [1 for i in range(self.n_comb)]
 
-
     def choose(self, n_round):
         """
         Function:   choose an arm
@@ -67,7 +67,7 @@ class BanditUcb(object):
         """
         mean = np.array(self.__w)
         bound = np.sqrt(2 * np.log(n_round) / mean)
-        chosen_idx = np.argmax(mean / n_round + bound)
+        chosen_idx = np.argm(mean / n_round + bound)
         return chosen_idx
 
     def update(self, score):
@@ -79,3 +79,27 @@ class BanditUcb(object):
         score = (score - np.min(score)) / (np.max(score) - np.min(score))
         for i in range(len(self.__w)):
             self.__w[i] += score[i]
+
+
+class BanditRegression(object):
+    def __init__(self, n_dataset, n_method):
+        """
+        Variable:   n_comb: number of combination
+                    gamma: EE rate
+        """
+        self.n_comb = n_dataset * n_method
+        self.gamma = 0.1
+        # method update parameter
+        self.__w = [1e-5 for _ in range(self.n_comb)]
+        self.__p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
+
+    def choose(self, context):
+        context = np.average(context) - 1
+        kernel = [w * context + random.uniform(-1e-4, 1e-4) for w in self.__w]
+        return kernel.index(max(kernel))
+
+    def update(self, score):
+        for i in range(len(self.__w)):
+            self.__w[i] += np.sign(self.__w[i]) * score[i]
+
+

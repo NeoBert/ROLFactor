@@ -5,6 +5,7 @@ import time
 import pandas as pd
 from os.path import join
 from tqdm import tqdm
+import numpy as np
 
 
 def _generate_relative_price(all_stock_csv):
@@ -105,6 +106,7 @@ class Stock:
         if mode == "last50":
             index = csv.columns.tolist()[-50:]
             csv = csv[index]
+        csv = csv.sort_index(axis=1)
         if len(csv.columns) > 50:
             codes = csv.columns.tolist()
             codes = codes[-50:]
