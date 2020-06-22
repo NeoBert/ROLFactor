@@ -67,7 +67,7 @@ class BanditUcb(object):
         """
         mean = np.array(self.__w)
         bound = np.sqrt(2 * np.log(n_round) / mean)
-        chosen_idx = np.argm(mean / n_round + bound)
+        chosen_idx = np.argmax(mean / n_round + bound)
         return chosen_idx
 
     def update(self, score):
@@ -102,4 +102,37 @@ class BanditRegression(object):
         for i in range(len(self.__w)):
             self.__w[i] += np.sign(self.__w[i]) * score[i]
 
+
+class BanditLinucb(object):
+    def __init__(self, n_dataset, n_method):
+        """
+        Variable:   n_comb: number of combination
+        """
+        self.n_comb = n_dataset * n_method
+        self.n_context = 15
+        self.alpha = 1
+        # method update parameter
+        self.__a = [np.eye(self.n_context)] * self.n_comb
+        self.__b = [np.zeros(self.n_context)] * self.n_comb
+        self.__context = np.empty((self.n_comb, self.n_context))
+
+    def choose(self, context):
+        """
+        Input:  context: array (n_comb, c_context)
+        """
+        p = np.empty(self.n_comb)
+        self.__context = context
+
+        for i in range(self.n_comb):
+            theta = np.linalg.inv(self.__a) @ self.__b
+            mean = theta.T @ context[i]
+            bound = self.alpha * np.sqrt(context[i].T @ np.linalg.inv(self.__a) @ context[i])
+            p[i] = mean + bound
+        chosen_idx = np.argmax(p)
+        return chosen_idx
+
+    def update(self, score):
+        for i in range(self.n_comb):
+            self.__a[i] += self.__context[i] @ self.__context[i].T
+            self.__b[i] += score[i] * self.__context[i]
 
