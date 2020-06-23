@@ -107,31 +107,35 @@ class BanditLinucb(object):
     def __init__(self, n_dataset, n_method):
         """
         Variable:   n_comb: number of combination
+                    n_context: number of dimension of context
+                    alpha: bound coefficient
         """
         self.n_comb = n_dataset * n_method
-        self.n_context = 15
+        self.n_context = 100
         self.alpha = 1
         # method update parameter
-        self.__a = [np.eye(self.n_context)] * self.n_comb
-        self.__b = [np.zeros(self.n_context)] * self.n_comb
-        self.__context = np.empty((self.n_comb, self.n_context))
-
-    def choose(self, context):
-        """
-        Input:  context: array (n_comb, c_context)
-        """
-        p = np.empty(self.n_comb)
-        self.__context = context
-
+        self.__a = np.empty((self.n_comb, self.n_context, self.n_context))
         for i in range(self.n_comb):
-            theta = np.linalg.inv(self.__a) @ self.__b
-            mean = theta.T @ context[i]
-            bound = self.alpha * np.sqrt(context[i].T @ np.linalg.inv(self.__a) @ context[i])
+            self.__a[i] = np.eye(self.n_context)
+        self.__b = np.zeros((self.n_comb, self.n_context))
+        self.__context = np.ones((self.n_comb, self.n_context))
+
+    def choose(self, context=None):
+        p = np.empty(self.n_comb)
+        for i in range(self.n_comb):
+            theta = np.linalg.inv(self.__a[i]) @ self.__b[i]
+            mean = theta.T @ self.__context[i]
+            bound = self.alpha * np.sqrt(self.__context[i].T @ np.linalg.inv(self.__a[i]) @ self.__context[i])
             p[i] = mean + bound
         chosen_idx = np.argmax(p)
         return chosen_idx
 
-    def update(self, score):
+    def update(self, score, context):
+        """
+        Input:  score: list (n_comb)
+                context: list (n_comb, c_context)
+        """
+        self.__context = np.array(context)
         for i in range(self.n_comb):
             self.__a[i] += self.__context[i] @ self.__context[i].T
             self.__b[i] += score[i] * self.__context[i]
