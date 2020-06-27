@@ -8,6 +8,7 @@ from algorithm.olps.pamr import Pamr
 from algorithm.olps.corn import CORN
 from algorithm.olps.olmar import Olmar
 from algorithm.olps.ons import ONS
+from algorithm.olps.tco import TransCostOpt
 from eval import Eval
 import json
 from tqdm import tqdm

@@ -66,8 +66,13 @@ class Olmar(object):
                     pass
                 else:
                     x = relative_price_array[t - 1, :]
-                    history = relative_price_array[:t, :]
-                    x_pred = (history[-self.window:] / x).mean(axis=0)
+                    history = relative_price_array[t - self.window:t]
+                    x_pred = np.ones(self.n_stock)
+                    x_multi = np.ones(self.n_stock)
+                    for i in range(self.window-1, -1, -1):
+                        x_multi *= history[i]
+                        x_pred += 1 / x_multi
+                    x_pred /= self.window
                     x_mean = np.mean(x_pred)
                     lam = max(0, (self.eps - np.dot(b, x_pred)) / np.linalg.norm(x_pred - x_mean) ** 2)
                     lam = min(100000, lam)
@@ -78,7 +83,7 @@ class Olmar(object):
                     b = np.ones(self.n_stock) / self.n_stock
                     x_pred = relative_price_array[0]
                 else:
-                    x = relative_price_array[t - 1, :]
+                    x = relative_price_array[t - 1]
                     x_pred = self.alpha + (1 - self.alpha) * x_pred / x
                     x_mean = np.mean(x_pred)
                     lam = max(0, (self.eps - np.dot(b, x_pred)) / np.linalg.norm(x_pred - x_mean) ** 2)
