@@ -5,6 +5,7 @@ from algorithm.olps.anticor import Anticor
 from algorithm.olps.rmr import Rmr
 from algorithm.olps.corn import CORN
 from algorithm.olps.pamr import Pamr
+from algorithm.olps.olmar import Olmar
 from eval import Eval
 import numpy as np
 # 获取该时间段下的所有数据
