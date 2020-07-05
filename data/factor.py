@@ -27,8 +27,8 @@ class Factor:
 
     def generate_data_frame(self):
         csv = self.csv
-        csv = abs(csv) + 1
-        csv = generate_relative_price(csv)
+        csv = abs(csv)# + 1
+        # csv = generate_relative_price(csv)
         csv = csv.dropna(axis=0)
         return csv.values.tolist()
 
