@@ -13,6 +13,7 @@ class FaMwu(object):
         self.weights = []
         # method parameter
         self.eta = 0.1
+        self.variant = 0
         # method update parameter
         self.__w = [1] * self.n_factor
 
@@ -24,7 +25,17 @@ class FaMwu(object):
             # update
             # full feedback
             for i in range(self.n_factor):
-                self.__w[i] *= (1 + self.eta * abs_ic[t][i])
+                # linear
+                if self.variant == 0:
+                    self.__w[i] *= (1 + self.eta * abs_ic[t][i])
+                # exponential
+                elif self.variant == 1:
+                    self.__w[i] *= (np.exp(self.eta * abs_ic[t][i]))
+                # euclidean
+                elif self.variant == 2:
+                    self.__w[i] += self.eta * abs_ic[t][i]
+            # for i in range(self.n_factor):
+            #     self.__w[i] /= sum(self.__w)
             
             weight = [0] * self.n_factor
             weight[chosen_idx] = 1
