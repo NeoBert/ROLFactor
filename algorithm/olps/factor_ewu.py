@@ -17,13 +17,19 @@ class FaEwu(object):
         self.eta = 0.1
         self.mask = list(combinations(range(self.n_factor), n_choose))
         self.n_comb = len(self.mask)
+        self.gamma = 0.01  # EE rate
+        self.variant = 1
         # method update parameter
         self.__w = [1] * self.n_comb
 
     def compute_weight(self, abs_ic):
         for t in range(len(abs_ic)):
             # choose
-            chosen_idx = self.__draw(self.__w)
+            if self.variant == 0:
+                chosen_idx = self.__draw(self.__w)
+            elif self.variant == 1:
+                p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
+                chosen_idx = self.__draw(p)
 
             # update
             for i in range(self.n_comb):
