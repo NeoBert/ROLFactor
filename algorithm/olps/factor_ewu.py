@@ -7,11 +7,11 @@ from itertools import combinations
 
 parent_dir_writer = abspath('result/statistic/weight')
 
-class FaMwu(object):
+class FaEwu(object):
     def __init__(self, n_factor, n_choose=1):
         self.n_factor = n_factor
         self.n_choose = n_choose
-        self.name = 'MWU'  # Multiplicative Weight Update
+        self.name = 'EWU'  # Exponential Weight Update
         self.weights = []
         # method parameter
         self.eta = 0.1
@@ -30,7 +30,7 @@ class FaMwu(object):
                 reward = 0
                 for j in range(self.n_choose):
                     reward += abs_ic[t][self.mask[i][j]]
-                self.__w[i] *= (1 + self.eta * reward)
+                self.__w[i] *= np.exp(self.eta * reward)
             
             weight = [0] * self.n_factor
             for j in range(self.n_choose):

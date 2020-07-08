@@ -8,7 +8,10 @@ from algorithm.olps.factor_bcrp import FaBcrp
 from algorithm.olps.factor_best import FaBest
 from algorithm.olps.factor_ucb import FaUcb
 from algorithm.olps.factor_exp3 import FaExp3
+from algorithm.olps.factor_awu import FaAwu
 from algorithm.olps.factor_mwu import FaMwu
+from algorithm.olps.factor_ewu import FaEwu
+from algorithm.olps.factor_wmu import FaWmu
 from eval_factor import EvalFactor
 import numpy as np
 import pandas as pd
@@ -17,7 +20,7 @@ stock_mode = "factor"
 factor = Factor()
 frame = factor.generate_data_frame()
 # 选择相应的算法
-algo_list = ['FaBest', 'FaBcrp', 'FaPamr', 'FaOlmar', 'FaRmr', 'FaUcb', 'FaExp3', 'FaMwu']
+algo_list = ['FaBest', 'FaBcrp', 'FaPamr', 'FaOlmar', 'FaRmr', 'FaUcb', 'FaExp3', 'FaAwu', 'FaMwu', 'FaEwu']
 result = pd.DataFrame()
 for al in algo_list:
     algo_class = eval(al)
