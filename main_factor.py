@@ -20,12 +20,12 @@ stock_mode = "factor"
 factor = Factor()
 frame = factor.generate_data_frame()
 # 选择相应的算法
-algo_list = ['FaBest', 'FaBcrp', 'FaPamr', 'FaOlmar', 'FaRmr', 'FaUcb', 'FaExp3', 'FaAwu', 'FaMwu', 'FaEwu']
+algo_list = ['FaBest', 'FaBcrp', 'FaPamr', 'FaOlmar', 'FaRmr', 'FaUcb', 'FaExp3', 'FaAwu', 'FaMwu', 'FaEwu', 'FaWmu']
 result = pd.DataFrame()
 for al in algo_list:
     algo_class = eval(al)
     reward = []
-    for dup in range(5):
+    for dup in range(10):
         algo = algo_class(n_factor=len(frame[0]))
         # 计算模型的权重
         algo.compute_weight(frame)
@@ -33,8 +33,6 @@ for al in algo_list:
         evaluate = EvalFactor(abs_ic=frame,
                             weight=algo.weights,)
         reward.append(evaluate.reward)
-    result[algo.name] = reward
-    # print(algo.name)
-    # evaluate.print_info()
-    # print("\n")
+    # result[algo.name] = reward
+    result[algo.name] = [np.mean(reward)]
 print(result)
