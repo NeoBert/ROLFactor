@@ -14,7 +14,7 @@ class FaEwu(object):
         self.name = 'EWU'  # Exponential Weight Update
         self.weights = []
         # method parameter
-        self.eta = 0.1
+        self.eta = 1
         self.mask = list(combinations(range(self.n_factor), n_choose))
         self.n_comb = len(self.mask)
         self.gamma = 0.01  # EE rate

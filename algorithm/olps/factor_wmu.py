@@ -18,7 +18,7 @@ class FaWmu(object):
         self.mask = list(combinations(range(self.n_factor), n_choose))
         self.n_comb = len(self.mask)
         self.gamma = 0.01  # EE rate
-        self.variant = 1
+        self.variant = 0
         # method update parameter
         self.__w = [1] * self.n_comb
 
@@ -31,11 +31,16 @@ class FaWmu(object):
                 p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
                 chosen_idx = self.__draw(p)
 
-            # update
+            # update chosen weights
             sort_idx = np.argsort(abs_ic[t])[::-1]
             for i in range(self.n_choose):
                 self.__w[sort_idx[i]] *= (1 + self.eta)
             
+            # update unchosen weights
+            # sort_idx = np.argsort(abs_ic[t])
+            # for i in range(self.n_factor - self.n_choose):
+            #     self.__w[sort_idx[i]] *= (1 - self.eta)
+
             weight = [0] * self.n_factor
             for i in range(self.n_choose):
                 weight[self.mask[chosen_idx][i]] = 1
