@@ -50,7 +50,7 @@ class ICRank(object):
                 per_ic = ic[t-self.n_window-1:t]
                 per_fa_weight = fa_weight[t]
 
-            weight = self.weight_update(t, per_rp, per_ic, per_fa_weight, fa_order, n_top)
+            weight = self.weight_update(t, per_rp, per_ic, per_fa_weight, fa_order, n_top, "ic_rank")
             self.weights.append(weight)
 
     def __linear_regression(self, x, y, z):
