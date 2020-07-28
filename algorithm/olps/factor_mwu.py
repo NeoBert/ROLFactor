@@ -13,10 +13,10 @@ class FaMwu(object):
         self.n_choose = n_choose
         self.name = 'MWU'  # Multiplicative Weight Update
         self.weights = []
-        # method parameter
-        self.eta = 1
         self.mask = list(combinations(range(self.n_factor), n_choose))
         self.n_comb = len(self.mask)
+        # method parameter
+        self.eta = 1
         self.gamma = 0.01  # EE rate
         self.variant = 0
         # method update parameter
