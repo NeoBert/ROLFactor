@@ -53,7 +53,7 @@ class ICRank(object):
 
             # following rounds
             else:
-                chosen_fa = np.argwhere(fa_weight[t]==1)[:, 0]
+                chosen_fa = np.argwhere(np.array(fa_weight[t])==1)[:, 0]
                 for i in range(self.n_choose):
                     pred_prices = []
                     x = ic[t-self.n_window-1:t-1, chosen_fa[i]]  # (n_window)
