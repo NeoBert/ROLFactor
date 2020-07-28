@@ -65,7 +65,7 @@ class ICRank(object):
         w = np.dot(inv @ x, y)
         return w @ np.array([1, z])
 
-    def weight_update(self, t, per_rp, per_ic, per_fa_weight, fa_order, n_top):
+    def weight_update(self, t, per_rp, per_ic, per_fa_weight, fa_order, n_top, model="ic_rank"):
         """
         Function:   update weight in each period
         Input:      t: int
@@ -74,6 +74,7 @@ class ICRank(object):
                     per_fa_weight: periodic factor weight - list
                     fa_order: boolean-list - (n_factor) True for positive correlation, False for negative
                     n_top: int - number of selected stock
+                    model: str - "ic_rank", "linear_reg"
         Output:     weight: float-list (n_stock)
         """
         # equal weight in the first round
@@ -103,29 +104,35 @@ class ICRank(object):
                 for j in range(self.n_stock):
                     y = per_rp[:,j]  # (n_window)
                     pred_prices.append(self.__linear_regression(x, y, per_ic[-1, chosen_fa[i]]))
-                if fa_order[i] == True:
-                    sorted_idx = np.argsort(pred_prices)[::-1]
-                    for j in range(self.n_stock):
-                        self.rank[i][sorted_idx[j]] = j# + 1
-                elif fa_order[i] == False:
-                    sorted_idx = np.argsort(pred_prices)
-                    for j in range(self.n_stock):
-                        self.rank[i][sorted_idx[j]] = j# + 1
-                
-            chosen_st = np.argsort(self.rank.sum(axis=0))
-            weight = [0] * self.n_stock
-            for i in range(n_top):
-                weight[chosen_st[i]] = 1 / n_top
+                if model == "ic_rank":
+                    if fa_order[i] == True:
+                        sorted_idx = np.argsort(pred_prices)[::-1]
+                        for j in range(self.n_stock):
+                            self.rank[i][sorted_idx[j]] = j# + 1
+                    elif fa_order[i] == False:
+                        sorted_idx = np.argsort(pred_prices)
+                        for j in range(self.n_stock):
+                            self.rank[i][sorted_idx[j]] = j# + 1
+                elif model == "linear_reg":
+                    self.rank[i] = pred_prices
+            if model == "ic_rank":    
+                chosen_st = np.argsort(self.rank.sum(axis=0))
+                weight = [0] * self.n_stock
+                for i in range(n_top):
+                    weight[chosen_st[i]] = 1 / n_top
+            elif model == "linear_reg":
+                weight = self.__softmax(self.rank.sum(axis=0))
+                weight = weight.tolist()
 
         return weight
 
-    # def __softmax(self, weight):
-    #     """
-    #     Input:  list/array (n_stock)
-    #     Output: array (n_stock)
-    #     """
-    #     w = np.exp(weight)
-    #     return w / w.sum()
+    def __softmax(self, weight):
+        """
+        Input:  list/array (n_stock)
+        Output: array (n_stock)
+        """
+        w = np.exp(weight)
+        return w / w.sum()
 
     def write_weight(self, file_name):
         """
