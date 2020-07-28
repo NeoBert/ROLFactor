@@ -23,28 +23,39 @@ class FaWmu(object):
         self.__w = [1] * self.n_comb
 
     def compute_weight(self, abs_ic):
+        """
+        Input:  abs_ic: float-array (n_time, n_factor)
+        """
         for t in range(len(abs_ic)):
-            # choose
-            if self.variant == 0:
-                chosen_idx = self.__draw(self.__w)
-            elif self.variant == 1:
-                p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
-                chosen_idx = self.__draw(p)
-
-            # update chosen weights
-            sort_idx = np.argsort(abs_ic[t])[::-1]
-            for i in range(self.n_choose):
-                self.__w[sort_idx[i]] *= (1 + self.eta)
-            
-            # update unchosen weights
-            # sort_idx = np.argsort(abs_ic[t])
-            # for i in range(self.n_factor - self.n_choose):
-            #     self.__w[sort_idx[i]] *= (1 - self.eta)
-
-            weight = [0] * self.n_factor
-            for i in range(self.n_choose):
-                weight[self.mask[chosen_idx][i]] = 1
+            per_ic = abs_ic[t]
+            weight = self.weight_update(per_ic)
             self.weights.append(weight)
+    
+    def weight_update(self, per_ic):
+        """
+        Input:  per_ic: periodic absolute ic - float-array (n_factor)
+        """
+        # choose
+        if self.variant == 0:
+            chosen_idx = self.__draw(self.__w)
+        elif self.variant == 1:
+            p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
+            chosen_idx = self.__draw(p)
+
+        # update chosen weights
+        sort_idx = np.argsort(per_ic)[::-1]
+        for i in range(self.n_choose):
+            self.__w[sort_idx[i]] *= (1 + self.eta)
+            
+        # update unchosen weights
+        # sort_idx = np.argsort(abs_ic[t])
+        # for i in range(self.n_factor - self.n_choose):
+        #     self.__w[sort_idx[i]] *= (1 - self.eta)
+
+        weight = [0] * self.n_factor
+        for i in range(self.n_choose):
+            weight[self.mask[chosen_idx][i]] = 1
+        return weight
 
     def __draw(self, weights):
         """

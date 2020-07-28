@@ -13,6 +13,8 @@ class ICRank(object):
     def __init__(self, n_stock, n_choose, n_window):
         """
         Variable:   n_stock: number of stock
+                    n_choose: number of chosen factor
+                    n_window: number of training window
                     name: name of method
                     weights: store historical weights
                     eta: learning rate
@@ -31,49 +33,24 @@ class ICRank(object):
                                     relative_price from [0, n_time - 1]
                     ic: float-array (n_time, n_factor)
                     fa_weight: 0/1-list (n_time, n_factor)
-                    fa_order: str-list (n_factor)
+                    fa_order: boolean-list - (n_factor) True for positive correlation, False for negative
+                    n_top: int - number of selected stock
         """
         for t in range(len(relative_price)):
-            # equal weight in the first round
             if t == 0:
-                weight = [1 / self.n_stock] * self.n_stock
-            
+                per_rp = []
+                per_ic = []
+                per_fa_weight = []
             elif t < self.n_window + 1:
-                """
-                [0:n_window-1] for training
-                [n_window] for prediction
-                """
-                # UBAH
-                weight_array = np.array(self.weights[-1])
-                price_array = np.array(relative_price[t - 1])
-                weight_array = (weight_array * price_array) / (weight_array @ price_array)
-                weight = list(w for w in weight_array)
-                # UCRP
-                weight = [1 / self.n_stock] * self.n_stock
-
-            # following rounds
+                per_rp = relative_price[t - 1]
+                per_ic = []
+                per_fa_weight = []
             else:
-                chosen_fa = np.argwhere(np.array(fa_weight[t])==1)[:, 0]
-                for i in range(self.n_choose):
-                    pred_prices = []
-                    x = ic[t-self.n_window-1:t-1, chosen_fa[i]]  # (n_window)
-                    for j in range(self.n_stock):
-                        y = np.array(relative_price[t-self.n_window:t])[:,j]  # (n_window)
-                        pred_prices.append(self.__linear_regression(x, y, ic[t][chosen_fa[i]]))
-                    if fa_order[i] == 'po':
-                        sorted_idx = np.argsort(-np.array(pred_prices))
-                        for j in range(self.n_stock):
-                            self.rank[i][sorted_idx[j]] = j + 1
-                    elif fa_order[i] == 'ne':
-                        self.rank[i] = np.argsort(pred_prices)
-                        for j in range(self.n_stock):
-                            self.rank[i][sorted_idx[j]] = j + 1
-                
-                chosen_st = np.argsort(self.rank.sum(axis=0))
-                weight = [0] * self.n_stock
-                for i in range(n_top):
-                    weight[chosen_st[i]] = 1 / n_top
-                
+                per_rp = relative_price[t-self.n_window:t]
+                per_ic = ic[t-self.n_window-1:t]
+                per_fa_weight = fa_weight[t]
+
+            weight = self.weight_update(t, per_rp, per_ic, per_fa_weight, fa_order, n_top)
             self.weights.append(weight)
 
     def __linear_regression(self, x, y, z):
@@ -87,6 +64,60 @@ class ICRank(object):
         inv = np.linalg.inv(x @ x.T)
         w = np.dot(inv @ x, y)
         return w @ np.array([1, z])
+
+    def weight_update(self, t, per_rp, per_ic, per_fa_weight, fa_order, n_top):
+        """
+        Function:   update weight in each period
+        Input:      t: int
+                    per_rp: periodic relative price - array
+                    per_ic: periodic ic - array
+                    per_fa_weight: periodic factor weight - list
+                    fa_order: boolean-list - (n_factor) True for positive correlation, False for negative
+                    n_top: int - number of selected stock
+        Output:     weight: float-list (n_stock)
+        """
+        # equal weight in the first round
+        if t == 0:
+            weight = [1 / self.n_stock] * self.n_stock
+            
+        elif t < self.n_window + 1:
+            """
+            [0:n_window-1] for training
+            [n_window] for prediction
+            """
+            # UBAH
+            weight_array = np.array(self.weights[-1])
+            price_array = per_rp
+            weight_array = (weight_array * price_array) / (weight_array @ price_array)
+            weight = list(w for w in weight_array)
+            # UCRP
+            weight = [1 / self.n_stock] * self.n_stock
+
+        # following rounds
+        else:
+            chosen_fa = np.argwhere(np.array(per_fa_weight)==1)[:, 0]
+            assert(len(chosen_fa) == self.n_choose)
+            for i in range(self.n_choose):
+                pred_prices = []
+                x = per_ic[:self.n_window-1, chosen_fa[i]]  # (n_window)
+                for j in range(self.n_stock):
+                    y = per_rp[:,j]  # (n_window)
+                    pred_prices.append(self.__linear_regression(x, y, per_ic[-1, chosen_fa[i]]))
+                if fa_order[i] == True:
+                    sorted_idx = np.argsort(pred_prices)[::-1]
+                    for j in range(self.n_stock):
+                        self.rank[i][sorted_idx[j]] = j# + 1
+                elif fa_order[i] == False:
+                    sorted_idx = np.argsort(pred_prices)
+                    for j in range(self.n_stock):
+                        self.rank[i][sorted_idx[j]] = j# + 1
+                
+            chosen_st = np.argsort(self.rank.sum(axis=0))
+            weight = [0] * self.n_stock
+            for i in range(n_top):
+                weight[chosen_st[i]] = 1 / n_top
+
+        return weight
 
     # def __softmax(self, weight):
     #     """

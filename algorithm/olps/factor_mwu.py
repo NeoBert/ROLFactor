@@ -18,30 +18,41 @@ class FaMwu(object):
         self.mask = list(combinations(range(self.n_factor), n_choose))
         self.n_comb = len(self.mask)
         self.gamma = 0.01  # EE rate
-        self.variant = 1
+        self.variant = 0
         # method update parameter
         self.__w = [1] * self.n_comb
 
     def compute_weight(self, abs_ic):
+        """
+        Input:  abs_ic: float-array (n_time, n_factor)
+        """
         for t in range(len(abs_ic)):
-            # choose
-            if self.variant == 0:
-                chosen_idx = self.__draw(self.__w)
-            elif self.variant == 1:
-                p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
-                chosen_idx = self.__draw(p)
-
-            # update
-            for i in range(self.n_comb):
-                reward = 0
-                for j in range(self.n_choose):
-                    reward += abs_ic[t][self.mask[i][j]]
-                self.__w[i] *= (1 + self.eta * reward)
-            
-            weight = [0] * self.n_factor
-            for j in range(self.n_choose):
-                weight[self.mask[chosen_idx][j]] = 1
+            per_ic = abs_ic[t]
+            weight = self.weight_update(per_ic)
             self.weights.append(weight)
+
+    def weight_update(self, per_ic):
+        """
+        Input:  per_ic: periodic absolute ic - float-array (n_factor)
+        """
+        # choose
+        if self.variant == 0:
+            chosen_idx = self.__draw(self.__w)
+        elif self.variant == 1:
+            p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
+            chosen_idx = self.__draw(p)
+
+        # update
+        for i in range(self.n_comb):
+            reward = 0
+            for j in range(self.n_choose):
+                reward += per_ic[self.mask[i][j]]
+            self.__w[i] *= (1 + self.eta * reward)
+            
+        weight = [0] * self.n_factor
+        for j in range(self.n_choose):
+            weight[self.mask[chosen_idx][j]] = 1
+        return weight
 
     def __draw(self, weights):
         """
