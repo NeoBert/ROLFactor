@@ -56,6 +56,7 @@ class FaOlmar(object):
         self.alpha = 0.25
         # method update parameter
         self.__b = [1 / self.n_comb] * self.n_comb
+        self.__pred = np.zeros(self.n_comb)
 
     def compute_weight(self, abs_ic):
         """
@@ -106,15 +107,14 @@ class FaOlmar(object):
             if t == 0:
                 b = np.zeros(self.n_comb)
                 b[np.random.randint(self.n_comb)] = 1
-                x_pred = np.zeros(self.n_comb)
             else:
-                x = np.zeros((self.window, self.n_comb))
-                for k in range(self.window):
-                    for i in range(self.n_comb):
-                        for j in range(self.n_choose):
-                            x[k][i] += per_ic[k][self.mask[i][j]]
+                x = np.zeros(self.n_comb)
+                for i in range(self.n_comb):
+                    for j in range(self.n_choose):
+                        x[i] += per_ic[self.mask[i][j]]
                 # x_pred = self.alpha + (1 - self.alpha) * x_pred / x
-                x_pred = self.alpha * x_pred + (1 - self.alpha) * x
+                self.__pred = self.alpha * self.__pred + (1 - self.alpha) * x
+                x_pred = self.__pred
                 x_mean = np.mean(x_pred)
                 b = np.array(self.__b)
                 lam = max(0, (np.dot(b, x_pred) - self.eps) / np.linalg.norm(x_pred - x_mean) ** 2)
