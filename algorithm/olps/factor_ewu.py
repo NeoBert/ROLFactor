@@ -28,10 +28,10 @@ class FaEwu(object):
         """
         for t in range(len(abs_ic)):
             per_ic = abs_ic[t]
-            weight = self.weight_update(per_ic)
+            weight = self.weight_update(t, per_ic)
             self.weights.append(weight)
 
-    def weight_update(self, per_ic):
+    def weight_update(self, t, per_ic):
         """
         Input:  per_ic: periodic absolute ic - float-array (n_factor)
         """
