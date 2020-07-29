@@ -38,11 +38,17 @@ class FaUcb(object):
         # update
         # full feedback
         # for i in range(self.n_comb):
-        #     self.__w[i] += per_ic[i]
+        #     reward = 0
+        #     for j in range(self.n_choose):
+        #         reward += per_ic[self.mask[i][j]]
+        #     self.__w[i] += reward
         # bandit feedback
         # if chosen_idx == abs_ic[t].index(max(abs_ic[t])):
         if chosen_idx == np.argmax(per_ic):
-            self.__w[chosen_idx] += per_ic[chosen_idx]
+            reward = 0
+            for j in range(self.n_choose):
+                reward += per_ic[self.mask[chosen_idx][j]]
+            self.__w[chosen_idx] += reward
 
         weight = [0] * self.n_factor
         for j in range(self.n_choose):

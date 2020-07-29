@@ -69,9 +69,12 @@ class FaPamr(object):
         Input:  per_ic: periodic absolute ic - float-array (n_factor)
         """
         if t == 0:
-            chosen_idx = np.random.randint(self.n_factor)
+            chosen_idx = np.random.randint(self.n_comb)
         else:
-            x = per_ic
+            x = np.zeros(self.n_comb)
+            for i in range(self.n_comb):
+                for j in range(self.n_choose):
+                    x[i] += per_ic[self.mask[i][j]]
             x_mean = np.mean(x)
             # b = np.array(self.weights[-1])
             b = np.array(self.__b)

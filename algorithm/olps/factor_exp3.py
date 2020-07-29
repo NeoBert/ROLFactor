@@ -41,11 +41,17 @@ class FaExp3(object):
         # update
         # full feedback
         # for i in range(self.n_comb):
-        #     self.__w[i] *= np.exp(self.gamma * per_ic[i] / self.n_comb / self.__p[i])
+        #     reward = 0
+        #     for j in range(self.n_choose):
+        #         reward += per_ic[self.mask[i][j]]
+        #     self.__w[i] *= np.exp(self.gamma * reward / self.n_comb / self.__p[i])
         # bandit feedback
         # if chosen_idx == abs_ic[t].index(max(abs_ic[t])):
         if chosen_idx == np.argmax(per_ic):
-            self.__w[chosen_idx] *= np.exp(self.gamma * per_ic[chosen_idx] / self.n_comb / self.__p[chosen_idx])
+            reward = 0
+            for j in range(self.n_choose):
+                reward += per_ic[self.mask[chosen_idx][j]]
+            self.__w[chosen_idx] *= np.exp(self.gamma * reward / self.n_comb / self.__p[chosen_idx])
 
         weight = [0] * self.n_factor
         for j in range(self.n_choose):

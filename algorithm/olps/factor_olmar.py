@@ -80,10 +80,17 @@ class FaOlmar(object):
                 b = np.zeros(self.n_comb)
                 b[np.random.randint(self.n_comb)] = 1
             else:
-                x = per_ic[-1]
-                history = per_ic
-                x_pred = np.ones(self.n_factor)
-                x_multi = np.ones(self.n_factor)
+                # x = np.zeros(self.n_comb)
+                # for i in range(self.n_comb):
+                #     for j in range(self.n_choose):
+                #         x[i] += per_ic[-1][self.mask[i][j]]
+                history = np.zeros((self.window, self.n_comb))
+                for k in range(self.window):
+                    for i in range(self.n_comb):
+                        for j in range(self.n_choose):
+                            history[k][i] += per_ic[k][self.mask[i][j]]
+                x_pred = np.ones(self.n_comb)
+                x_multi = np.ones(self.n_comb)
                 for i in range(self.window-1, -1, -1):
                     x_multi *= history[i]
                     x_pred += 1 / x_multi
@@ -97,11 +104,15 @@ class FaOlmar(object):
                 self.__b = b
         elif self.variant == 1:
             if t == 0:
-                b = np.zeros(self.n_factor)
-                b[np.random.randint(self.n_factor)] = 1
-                x_pred = np.zeros(self.n_factor)
+                b = np.zeros(self.n_comb)
+                b[np.random.randint(self.n_comb)] = 1
+                x_pred = np.zeros(self.n_comb)
             else:
-                x = per_ic
+                x = np.zeros((self.window, self.n_comb))
+                for k in range(self.window):
+                    for i in range(self.n_comb):
+                        for j in range(self.n_choose):
+                            x[k][i] += per_ic[k][self.mask[i][j]]
                 # x_pred = self.alpha + (1 - self.alpha) * x_pred / x
                 x_pred = self.alpha * x_pred + (1 - self.alpha) * x
                 x_mean = np.mean(x_pred)

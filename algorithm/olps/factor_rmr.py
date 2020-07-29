@@ -49,11 +49,18 @@ class FaRmr(object):
         l1_norm = lambda z: np.abs(z).sum()
         
         if t < self.window:
-            b = np.zeros(self.n_factor)
-            b[np.random.randint(self.n_factor)] = 1
+            b = np.zeros(self.n_comb)
+            b[np.random.randint(self.n_comb)] = 1
         else:
-            x = per_ic[-1]
-            history = per_ic
+            x = np.zeros(self.n_comb)
+            for i in range(self.n_comb):
+                for j in range(self.n_choose):
+                    x[i] += per_ic[-1][self.mask[i][j]]
+            history = np.zeros((self.window, self.n_comb))
+            for k in range(self.window):
+                for i in range(self.n_comb):
+                    for j in range(self.n_choose):
+                        history[k][i] += per_ic[k][self.mask[i][j]]
 
             y = np.median(history, axis=0)
 
