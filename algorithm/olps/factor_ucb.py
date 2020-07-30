@@ -44,7 +44,11 @@ class FaUcb(object):
         #     self.__w[i] += reward
         # bandit feedback
         # if chosen_idx == abs_ic[t].index(max(abs_ic[t])):
-        if chosen_idx == np.argmax(per_ic):
+        comb_ic = np.zeros(self.n_comb)
+        for i in range(self.n_comb):
+            for j in range(self.n_choose):
+                comb_ic[i] += per_ic[self.mask[i][j]]
+        if chosen_idx == np.argmax(comb_ic):
             reward = 0
             for j in range(self.n_choose):
                 reward += per_ic[self.mask[chosen_idx][j]]
