@@ -12,6 +12,9 @@ from algorithm.olps.factor_awu import FaAwu
 from algorithm.olps.factor_mwu import FaMwu
 from algorithm.olps.factor_ewu import FaEwu
 from algorithm.olps.factor_wmu import FaWmu
+from algorithm.olps.factor_capm import FaCapm
+from algorithm.olps.factor_ff3 import FaFf3
+from algorithm.olps.factor_ff5 import FaFf5
 from eval_factor import EvalFactor
 import numpy as np
 import pandas as pd
