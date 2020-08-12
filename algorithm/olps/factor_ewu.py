@@ -13,12 +13,15 @@ class FaEwu(object):
         self.n_choose = n_choose
         self.name = 'EWU'  # Exponential Weight Update
         self.weights = []
-        self.mask = list(combinations(range(self.n_factor), n_choose))
-        self.n_comb = len(self.mask)
+        self.variant = 0
+        if self.variant in [0, 1]:
+            self.mask = list(combinations(range(self.n_factor), n_choose))
+            self.n_comb = len(self.mask)
+        elif self.variant == 2:
+            self.n_comb == self.n_factor
         # method parameter
         self.eta = 1
         self.gamma = 0.01  # EE rate
-        self.variant = 0
         # method update parameter
         self.__w = [1] * self.n_comb
 
@@ -41,17 +44,25 @@ class FaEwu(object):
         elif self.variant == 1:
             p = [(1 - self.gamma) * w / sum(self.__w) + self.gamma / self.n_comb for w in self.__w]
             chosen_idx = self.__draw(p)
+        elif self.variant == 2:
+            chosen_idx = self.__top(self.__w)
 
         # update
         for i in range(self.n_comb):
-            reward = 0
-            for j in range(self.n_choose):
-                reward += per_ic[self.mask[i][j]]
-            self.__w[i] *= np.exp(self.eta * reward)
-            
+            if self.variant in [0, 1]:
+                reward = 0
+                for j in range(self.n_choose):
+                    reward += per_ic[self.mask[i][j]]
+                self.__w[i] *= np.exp(self.eta * reward)
+            elif self.variant == 2:
+                self.__w[i] *= np.exp(self.eta * per_ic[i])
+
         weight = [0] * self.n_factor
         for j in range(self.n_choose):
-            weight[self.mask[chosen_idx][j]] = 1
+            if self.variant in [0, 1]:
+                weight[self.mask[chosen_idx][j]] = 1
+            elif self.variant == 2:
+                weight[chosen_idx[j]] = 1
         return weight
 
     def __draw(self, weights):
@@ -68,6 +79,18 @@ class FaEwu(object):
                 return index
             index += 1
         return len(weights) - 1
+
+    def __top(self, weights):
+        """
+        Function:   select top n_choose weight
+        Input:      weights: float-list (n_stock)
+        Output:     index: int-list (n_choose)
+        """
+        choice = np.argsort(weights)[::-1]
+        index = []
+        for i in range(self.n_choose):
+            index.append(choice[i])
+        return index
 
     def write_weight(self, file_name):
         """
