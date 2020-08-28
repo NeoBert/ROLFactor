@@ -18,7 +18,7 @@ class FaEwu(object):
             self.mask = list(combinations(range(self.n_factor), n_choose))
             self.n_comb = len(self.mask)
         elif self.variant == 2:
-            self.n_comb == self.n_factor
+            self.n_comb = self.n_factor
         # method parameter
         self.eta = 1
         self.gamma = 0.01  # EE rate

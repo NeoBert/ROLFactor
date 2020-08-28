@@ -12,7 +12,7 @@ class FaFf5(object):
     #                9 market_cap
     #                19 book_to_price_ratio -> 1 / pb_ratio (pd_ratio_reverse)
     #                24 roe_ttm
-    #                27 total_asset
+    #                27 total_asset_growth_rate
     def __init__(self, n_factor, n_choose=5):
         """
         Variable:   n_factor: number of factor
